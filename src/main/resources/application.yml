@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/restaurants?currentSchema=public
+    username: postgres
+    password: Boxing2003
+  jpa:
+    hibernate:
+      ddl-auto: update
+      properties:
+        hibernate:
+          default_schema: public
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8082/auth/realms/edafon
+          jwk-set-uri: http://localhost:8082/auth/realms/edafon/protocol/openid-connect/certs
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
