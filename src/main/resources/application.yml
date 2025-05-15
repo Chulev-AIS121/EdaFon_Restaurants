@@ -1,6 +1,9 @@
 server:
   port: 8082
-
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.example.EdaFon_Restaurants: TRACE
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/restaurants?currentSchema=public
@@ -18,8 +21,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8082/auth/realms/edafon
-          jwk-set-uri: http://localhost:8082/auth/realms/edafon/protocol/openid-connect/certs
+          secret: EdaFonJWTEdaFonJWTEdaFonJWTEdaFonJWT
 
 springdoc:
   api-docs:

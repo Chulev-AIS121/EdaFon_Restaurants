@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -13,6 +14,14 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+
 
 @Configuration
 @EnableWebSecurity
@@ -22,7 +31,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter());
+
+        // Устанавливаем кастомный конвертер с логами
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            System.out.println("=== JWT DEBUG ===");
+            System.out.println("All claims: " + jwt.getClaims());
+            System.out.println("Roles claim: " + jwt.getClaim("roles"));
+
+            // Используем наш основной конвертер
+            Collection<GrantedAuthority> authorities = jwtGrantedAuthoritiesConverter().convert(jwt);
+            System.out.println("Converted authorities: " + authorities);
+
+            return authorities;
+        });
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -48,13 +69,12 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     // Конвертер для извлечения ролей из JWT
     @Bean
     public JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter() {
         JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
-        converter.setAuthorityPrefix("ROLE_"); // Добавляет префикс ROLE_ к ролям из токена
-        converter.setAuthoritiesClaimName("roles"); // Указывает, где искать роли в JWT
+        converter.setAuthorityPrefix(""); // Убираем автоматический префикс ROLE_
+        converter.setAuthoritiesClaimName("role"); // Указываем, где искать роли в JWT
         return converter;
     }
 
@@ -69,5 +89,12 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        String secret = "EdaFonJWTEdaFonJWTEdaFonJWTEdaFonJWT"; // тот же, что и в application.yml
+        SecretKey secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        return NimbusJwtDecoder.withSecretKey(secretKey).build();
     }
 }
